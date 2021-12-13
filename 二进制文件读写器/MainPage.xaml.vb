@@ -112,8 +112,9 @@ Public NotInheritable Class MainPage
 		常规读入("读入双精度：", AddressOf New BinaryReader(当前流).ReadDouble, 次数)
 	End Sub,
 	Sub(次数 As UInteger)
+		Dim 当前位置 As ULong = 当前流.Position
 		Dim 字符 As Char() = New BinaryReader(当前流).ReadChars(次数)
-		消息列表.Add("读入字符：" & 字符)
+		消息列表.Add("从位置" & 当前位置 & "读入字符：" & 字符)
 	End Sub,
 	Sub(次数 As UInteger)
 		Dim 读取器 As New BinaryReader(当前流)
@@ -134,7 +135,13 @@ Public NotInheritable Class MainPage
 	End Sub
 
 	Private Sub 确认扩展名_Click(sender As Object, e As RoutedEventArgs) Handles 确认扩展名.Click
-		文件新建对话框.FileTypeChoices.Item("用户定义类型").Item(0) = 扩展名.Text
+		Try
+			文件新建对话框.FileTypeChoices.Item("用户定义类型").Item(0) = 扩展名.Text
+		Catch ex As Exception
+			错误内容.Text = ex.Message
+			错误提示.ShowAt(确认扩展名)
+			Exit Sub
+		End Try
 		设置当前文件(文件新建对话框.PickSaveFileAsync)
 	End Sub
 	Private Sub 常规写出(Of T)(提示词 As String, Parser As Func(Of String, T), 操作次数 As UInteger, 元素尺寸 As Byte)
@@ -142,16 +149,17 @@ Public NotInheritable Class MainPage
 		Dim Parsed内容 As T = Parser(内容)
 		Dim 字节数 As UInteger = 操作次数 * 元素尺寸
 		Dim 字节(字节数 - 1) As Byte
+		提示词 = "向位置" & 当前流.Position & 提示词 & 内容 & "×" & 操作次数
 		Try
 			System.Buffer.BlockCopy(Enumerable.Repeat(Parsed内容, 操作次数).ToArray, 0, 字节, 0, 字节数)
 		Catch ex As Exception
-			消息列表.Add(提示词 & 内容 & " ×" & 操作次数 & "（出错）")
+			消息列表.Add(提示词 & "（出错）")
 			消息列表.Add("出错：" & ex.Message)
 			Throw ex
 		End Try
 		当前流.WriteAsync(字节, 0, 字节数)
 		当前流.FlushAsync()
-		消息列表.Add(提示词 & 内容 & " ×" & 操作次数)
+		消息列表.Add(提示词)
 	End Sub
 	Private Sub 二进制写出_Click(sender As Object, e As RoutedEventArgs) Handles 二进制写出.Click
 		Dim 操作次数 As Long = 参数检查()
@@ -159,15 +167,16 @@ Public NotInheritable Class MainPage
 	Sub(次数 As UInteger) 常规写出("写出布尔逻辑：", AddressOf Boolean.Parse, 次数, 1),
 	Sub(次数 As UInteger)
 		Dim 内容 As String = 写出内容.Text
+		Dim 提示词 As String = "向位置" & 当前流.Position & "写出8位无符号：" & 内容 & "×" & 次数
 		Try
 			当前流.WriteAsync(Enumerable.Repeat(Byte.Parse(内容), 次数).ToArray, 0, 次数)
 		Catch ex As Exception
-			消息列表.Add("写出8位无符号：" & 内容 & " ×" & 次数 & "（出错）")
+			消息列表.Add(提示词 & "（出错）")
 			消息列表.Add("出错：" & ex.Message)
 			Throw ex
 		End Try
 		当前流.FlushAsync()
-		消息列表.Add("写出8位无符号：" & 内容 & " ×" & 次数)
+		消息列表.Add(提示词)
 	End Sub,
 	Sub(次数 As UInteger) 常规写出("写出8位有符号：", AddressOf SByte.Parse, 次数, 1),
 	Sub(次数 As UInteger) 常规写出("写出16位无符号：", AddressOf UShort.Parse, 次数, 2),
@@ -190,22 +199,24 @@ Public NotInheritable Class MainPage
 	Sub(次数 As UInteger)
 		Dim 内容 As String = 写出内容.Text
 		Dim 写出器 As New BinaryWriter(当前流)
+		Dim 提示词 As String = "向位置" & 当前流.Position & "写出字符：" & 内容 & "×" & 次数
 		Try
 			写出器.Write(Enumerable.Repeat(Char.Parse(内容), 次数).ToArray)
 		Catch ex As Exception
-			消息列表.Add("写出字符：" & 内容 & " ×" & 次数 & "（出错）")
+			消息列表.Add(提示词 & "（出错）")
 			消息列表.Add("出错：" & ex.Message)
 			Throw ex
 		End Try
-		消息列表.Add("写出字符：" & 内容 & " ×" & 次数)
+		消息列表.Add(提示词)
 	End Sub,
 	Sub(次数 As UInteger)
 		Dim 写出器 As New BinaryWriter(当前流)
 		Dim 内容 As String = 写出内容.Text
+		Dim 提示词 As String = "向位置" & 当前流.Position & "写出字符串（前缀长度）：" & 内容 & "×" & 次数
 		For a As UInteger = 1 To 次数
 			写出器.Write(内容)
 		Next
-		消息列表.Add("写出字符串：" & 内容 & " ×" & 次数)
+		消息列表.Add(提示词)
 	End Sub}
 		If 操作次数 > 0 Then
 			Try
