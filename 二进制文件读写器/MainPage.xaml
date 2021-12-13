@@ -13,11 +13,12 @@
 	</Page.Resources>
 	<Page.BottomAppBar>
 		<CommandBar>
-			<AppBarButton x:Name="二进制读入" Icon="Read" Label="二进制读入" ToolTipService.ToolTip="二进制读入"/>
-			<AppBarButton x:Name="二进制写出" Icon="SaveLocal" Label="二进制写出" ToolTipService.ToolTip="二进制写出"/>
+			<AppBarButton x:Name="二进制读入" Icon="Download" Label="二进制读入" ToolTipService.ToolTip="二进制读入"/>
+			<AppBarButton x:Name="二进制写出" Icon="Upload" Label="二进制写出" ToolTipService.ToolTip="二进制写出"/>
 			<AppBarElementContainer VerticalAlignment="Center">
 				<StackPanel Orientation="Horizontal">
 					<TextBox x:Name="当前位置" PlaceholderText="当前流位置" ToolTipService.ToolTip="当前流位置"/>
+					<CheckBox x:Name="自动递进位置" Content="自动递进位置" ToolTipService.ToolTip="每次读写后，自动将当前流位置放置在读写区域尾部"/>
 					<ComboBox x:Name="数据类型" SelectedIndex="1" ToolTipService.ToolTip="数据类型">
 						<ComboBox.Items>
 							<ComboBoxItem Content="布尔逻辑"/>
@@ -53,6 +54,17 @@
 			<AppBarButton x:Name="打开文件" Icon="OpenFile" Label="打开文件" ToolTipService.ToolTip="打开文件"/>
 			<AppBarButton x:Name="关闭文件" Icon="ClosePane" Label="关闭文件" ToolTipService.ToolTip="关闭文件"/>
 			<AppBarButton x:Name="清除记录" Icon="Clear" Label="清除操作记录" ToolTipService.ToolTip="清除操作记录"/>
+			<AppBarButton x:Name="保存记录" Icon="SaveLocal" Label="保存操作记录" ToolTipService.ToolTip="保存操作记录"/>
+			<AppBarButton Icon="OpenLocal" Label="载入操作记录" ToolTipService.ToolTip="载入操作记录">
+				<AppBarButton.Flyout>
+					<Flyout>
+						<StackPanel>
+							<Button x:Name="追加记录" Content="追加现有记录"/>
+							<Button x:Name="覆盖记录" Content="覆盖现有记录"/>
+						</StackPanel>
+					</Flyout>
+				</AppBarButton.Flyout>
+			</AppBarButton>
 		</CommandBar>
 	</Page.BottomAppBar>
 	<Grid>
@@ -62,12 +74,12 @@
 		</Grid.RowDefinitions>
 		<StackPanel Orientation="Horizontal" Grid.Row="0">
 			<TextBlock Text="文件路径："/>
-			<TextBlock x:Name="文件路径"/>
+			<TextBlock x:Name="文件路径" IsTextSelectionEnabled="True"/>
 		</StackPanel>
 		<ListView x:Name="操作记录" Grid.Row="1" Grid.Column="0" Header="操作记录">
 			<ListView.ItemTemplate>
 				<DataTemplate>
-					<TextBlock Text="{Binding}" TextWrapping="WrapWholeWords"/>
+					<TextBlock Text="{Binding}" TextWrapping="WrapWholeWords" IsTextSelectionEnabled="True"/>
 				</DataTemplate>
 			</ListView.ItemTemplate>
 		</ListView>
