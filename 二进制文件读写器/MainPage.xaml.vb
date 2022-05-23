@@ -26,6 +26,7 @@ Public NotInheritable Class MainPage
 	Private 操作记录写出器 As BinaryWriter
 	Private 当前流读取器 As BinaryReader
 	Private 当前流写出器 As BinaryWriter
+
 	Private Function 参数检查(错误提示位置 As FrameworkElement) As Long
 		If 当前流 Is Nothing Then
 			错误内容.Text = "未打开任何文件"
@@ -48,21 +49,41 @@ Public NotInheritable Class MainPage
 			End Try
 		End If
 	End Function
+
 	Private Async Sub 设置当前文件(文件操作 As IAsyncOperation(Of StorageFile), Optional 加入最近列表 As Boolean = True)
-		Dim 文件 As StorageFile
 		Try
-			文件 = Await 文件操作
+			设置当前文件(Await 文件操作, 加入最近列表)
 		Catch ex As FileNotFoundException
 			Exit Sub
 		End Try
+	End Sub
+
+	Private Async Sub 设置当前文件(文件 As IStorageFile, Optional 加入最近列表 As Boolean = True)
 		If 文件 IsNot Nothing Then
 			If 当前流 IsNot Nothing Then
 				当前流.Close()
 			End If
-			当前流 = (Await 文件.OpenAsync(FileAccessMode.ReadWrite)).AsStream
+			Dim 只读 As Boolean = False
+			Try
+				当前流 = (Await 文件.OpenAsync(FileAccessMode.ReadWrite)).AsStream
+			Catch ex As IOException
+				添加消息(ex.Message)
+				只读 = True
+			End Try
+			If 只读 Then
+				添加消息("将以只读模式打开")
+				当前流 = (Await 文件.OpenReadAsync()).AsStreamForRead
+			End If
 			当前流读取器 = New BinaryReader(当前流)
-			当前流写出器 = New BinaryWriter(当前流)
-			文件路径.Text = 文件.Path
+			If 只读 Then
+				当前流写出器 = Nothing
+				二进制写出.IsEnabled = False
+				文件路径.Text = 文件.Path & "（只读）"
+			Else
+				当前流写出器 = New BinaryWriter(当前流)
+				二进制写出.IsEnabled = True
+				文件路径.Text = 文件.Path
+			End If
 			If 加入最近列表 Then
 				漫游设置.Values("上次打开文件令牌") = 最近访问列表.Add(文件)
 				当前位置.Text = 当前流.Position
@@ -71,13 +92,16 @@ Public NotInheritable Class MainPage
 			End If
 		End If
 	End Sub
+
 	Private Sub 打开文件_Click(sender As Object, e As RoutedEventArgs) Handles 打开文件.Click
 		设置当前文件(文件打开对话框.PickSingleFileAsync)
 	End Sub
+
 	Private Sub 添加消息(消息 As String)
 		消息列表.Add(消息)
 		操作记录写出器.Write(消息)
 	End Sub
+
 	Private Sub 常规读入(Of T)(提示词 As String, 单读函数 As Func(Of T), 操作次数 As UInteger)
 		Dim 字符串 As New StringBuilder("从位置")
 		字符串.Append(当前流.Position).Append(提示词)
@@ -93,6 +117,7 @@ Public NotInheritable Class MainPage
 		Dim 结果 As String = 字符串.ToString
 		添加消息(结果)
 	End Sub
+
 	Private Sub 二进制读入_Click(sender As Object, e As RoutedEventArgs) Handles 二进制读入.Click
 		Dim 操作次数 As Long = 参数检查(sender)
 		Static 操作列表 As Action(Of UInteger)() = {
@@ -155,8 +180,6 @@ Public NotInheritable Class MainPage
 			Else
 				当前流.Position = 当前位置.Text
 			End If
-			漫游设置.Values("当前位置") = 当前流.Position
-			漫游设置.Values("读写次数") = 操作次数
 		End If
 	End Sub
 
@@ -170,6 +193,7 @@ Public NotInheritable Class MainPage
 		End Try
 		设置当前文件(文件新建对话框.PickSaveFileAsync)
 	End Sub
+
 	Private Sub 常规写出(Of T)(提示词 As String, Parser As Func(Of String, T), 操作次数 As UInteger, 元素尺寸 As Byte)
 		Dim 内容 As String = 写出内容.Text
 		Dim Parsed内容 As T = Parser(内容)
@@ -187,6 +211,7 @@ Public NotInheritable Class MainPage
 		当前流.FlushAsync()
 		添加消息(提示词)
 	End Sub
+
 	Private Sub 二进制写出_Click(sender As Object, e As RoutedEventArgs) Handles 二进制写出.Click
 		Dim 操作次数 As Long = 参数检查(sender)
 		Static 操作列表 As Action(Of UInteger)() = {
@@ -253,9 +278,6 @@ Public NotInheritable Class MainPage
 			Else
 				当前流.Position = 当前位置.Text
 			End If
-			漫游设置.Values("当前位置") = 当前流.Position
-			漫游设置.Values("读写次数") = 操作次数
-			漫游设置.Values("写出内容") = 写出内容.Text
 		End If
 	End Sub
 
@@ -287,6 +309,11 @@ Public NotInheritable Class MainPage
 		操作记录写出器.Write(CUShort(消息列表.Count))
 		操作记录写出器.Seek(流位置, SeekOrigin.Begin)
 		漫游设置.Values("数据类型") = 数据类型.SelectedIndex
+		漫游设置.Values("当前位置") = 当前流.Position
+		漫游设置.Values("写出内容") = 写出内容.Text
+		Static 操作次数 As ULong = 1
+		ULong.TryParse(读写次数.Text, 操作次数)
+		漫游设置.Values("读写次数") = 操作次数
 	End Sub
 
 	Private Async Sub 保存记录_Click(sender As Object, e As RoutedEventArgs) Handles 保存记录.Click
@@ -300,6 +327,7 @@ Public NotInheritable Class MainPage
 			记录写出器.Close()
 		End If
 	End Sub
+
 	Private Async Sub 载入记录(覆盖 As Boolean)
 		Dim 记录文件 As StorageFile = Await 载入记录对话框.PickSingleFileAsync
 		If 记录文件 IsNot Nothing Then
@@ -314,6 +342,7 @@ Public NotInheritable Class MainPage
 			记录读入器.Close()
 		End If
 	End Sub
+
 	Private Sub 追加记录_Click(sender As Object, e As RoutedEventArgs) Handles 追加记录.Click
 		载入记录(False)
 	End Sub
@@ -367,5 +396,38 @@ Public NotInheritable Class MainPage
 			当前流.Seek(当前位置.Text, SeekOrigin.Begin)
 		End If
 		DirectCast(App.Current, App).注册关闭处理(AddressOf 关闭处理)
+	End Sub
+
+	Private Sub 二进制跳过_Click(sender As Object, e As RoutedEventArgs) Handles 二进制跳过.Click
+		Static 数据大小 As Byte() = {1, 1, 1, 2, 2, 4, 4, 8, 8, 16, 4, 8}
+		Dim 操作次数 As Long = 参数检查(sender)
+		If 操作次数 > 0 Then
+			Select Case 数据类型.SelectedIndex
+				Case 12
+					Try
+						当前流读取器.ReadChars(操作次数)
+					Catch ex As Exception
+						错误内容.Text = ex.Message
+						错误提示.ShowAt(sender)
+					End Try
+				Case 13
+					Try
+						For a = 1 To 操作次数
+							当前流读取器.ReadString()
+						Next
+					Catch ex As Exception
+						错误内容.Text = ex.Message
+						错误提示.ShowAt(sender)
+					End Try
+				Case Else
+					Try
+						当前流.Position += 数据大小(数据类型.SelectedIndex) * 操作次数
+					Catch ex As Exception
+						错误内容.Text = ex.Message
+						错误提示.ShowAt(sender)
+					End Try
+			End Select
+			当前位置.Text = 当前流.Position
+		End If
 	End Sub
 End Class

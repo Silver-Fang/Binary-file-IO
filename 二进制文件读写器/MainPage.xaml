@@ -15,6 +15,7 @@
 		<CommandBar>
 			<AppBarButton x:Name="二进制读入" Icon="Download" Label="二进制读入" ToolTipService.ToolTip="二进制读入"/>
 			<AppBarButton x:Name="二进制写出" Icon="Upload" Label="二进制写出" ToolTipService.ToolTip="二进制写出"/>
+			<AppBarButton x:Name="二进制跳过" Icon="Next" Label="二进制跳过" ToolTipService.ToolTip="二进制跳过"/>
 			<AppBarElementContainer VerticalAlignment="Center">
 				<StackPanel Orientation="Horizontal">
 					<TextBox x:Name="当前位置" PlaceholderText="当前流位置" ToolTipService.ToolTip="当前流位置"/>
@@ -38,7 +39,6 @@
 						</ComboBox.Items>
 					</ComboBox>
 					<TextBox x:Name="读写次数" PlaceholderText="读写次数" InputScope="Number" ToolTipService.ToolTip="读写次数"/>
-					<TextBox x:Name="写出内容" PlaceholderText="写出内容" ToolTipService.ToolTip="写出内容"/>
 				</StackPanel>
 			</AppBarElementContainer>
 			<AppBarButton Icon="NewWindow" Label="新建文件" AllowFocusOnInteraction="true" ToolTipService.ToolTip="新建文件">
@@ -71,6 +71,7 @@
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto"/>
 			<RowDefinition/>
+			<RowDefinition Height="Auto"/>
 		</Grid.RowDefinitions>
 		<StackPanel Orientation="Horizontal" Grid.Row="0">
 			<TextBlock Text="文件路径："/>
@@ -83,5 +84,6 @@
 				</DataTemplate>
 			</ListView.ItemTemplate>
 		</ListView>
+		<TextBox x:Name="写出内容" PlaceholderText="写出内容" ToolTipService.ToolTip="写出内容" Grid.Row="2" Grid.Column="0" TextWrapping="Wrap" AcceptsReturn="True"/>
 	</Grid>
 </Page>
